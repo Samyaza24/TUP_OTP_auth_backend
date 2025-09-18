@@ -41,7 +41,6 @@ async function sendOTP(req, res) {
         return res.status(500).json({ message: "Internal server error" });
     }
     res.status(200).json({ message: "OTP sent successfully" });
-    
 }
 
 
