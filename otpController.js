@@ -1,24 +1,10 @@
 const pool = require("./db").pool;
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 require("dotenv").config();
 
-// Create a transporter for sending emails
-const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: smtpPort,
-    secure: smtpPort === 465, // true for 465, false for other ports
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 5000
-});
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 
 async function sendOTP(req, res) {
@@ -36,12 +22,12 @@ async function sendOTP(req, res) {
             [email, otp, otpExpiry]
         );
 
-        // Send OTP via email (non-blocking)
-        transporter.sendMail({
-            from: process.env.EMAIL_USER,
+        // Send OTP via email using Resend (non-blocking)
+        resend.emails.send({
+            from: process.env.EMAIL_FROM || "onboarding@resend.dev",
             to: email,
             subject: "Your OTP Code",
-            text: `Your OTP code is ${otp}. It is valid for 5 minutes.`,
+            html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
         }).then(() => {
             console.log("OTP email sent successfully to", email);
         }).catch((err) => {
