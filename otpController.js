@@ -22,11 +22,11 @@ async function sendOTP(req, res) {
             [email, otp, otpExpiry]
         );
 
-        // Send OTP via email using Resend (non-blocking)
+        // Send OTP via email using Resend 
         resend.emails.send({
             from: process.env.EMAIL_FROM || "onboarding@resend.dev",
             to: email,
-            reply_to: "group1.ers.recovery@gmail.com",
+            replyTo: "group1.ers.recovery@gmail.com",
             subject: "Your OTP Code",
             html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
         }).then(() => {
@@ -35,8 +35,7 @@ async function sendOTP(req, res) {
             console.error("Error sending email:", err.message);
         });
 
-        // Respond immediately after database insert
-        res.status(200).json({ message: "OTP sent successfully", otp: otp }); // Include OTP for testing
+        res.status(200).json({ message: "OTP sent successfully"});
 
     } catch (error) {
         console.error("Error storing OTP in database:", error);
@@ -49,18 +48,6 @@ async function verifyOTP(req, res) {
     const { email, otp } = req.body;
 
     try {
-        // First check if email exists
-        const checkEmail = await pool.query(
-            "SELECT * FROM otps WHERE email = $1",
-            [email.trim()]
-        );
-        
-        console.log("Verification attempt:", { email: email.trim(), otp: String(otp).trim(), found: checkEmail.rows.length });
-        
-        if (checkEmail.rows.length > 0) {
-            console.log("DB OTP:", checkEmail.rows[0].code, "Type:", typeof checkEmail.rows[0].code);
-        }
-
         const result = await pool.query(
             "SELECT * FROM otps WHERE email = $1 AND code = $2",
             [email.trim(), String(otp).trim()]
