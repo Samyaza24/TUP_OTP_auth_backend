@@ -33,19 +33,25 @@ async function sendOTP(req, res) {
             [email, otp, otpExpiry]
         );
 
-        // Send OTP via email
-        await transporter.sendMail({
+        // Send OTP via email (non-blocking)
+        transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
             subject: "Your OTP Code",
             text: `Your OTP code is ${otp}. It is valid for 5 minutes.`,
+        }).then(() => {
+            console.log("OTP email sent successfully to", email);
+        }).catch((err) => {
+            console.error("Error sending email:", err.message);
         });
+
+        // Respond immediately after database insert
+        res.status(200).json({ message: "OTP sent successfully", otp: otp }); // Include OTP for testing
 
     } catch (error) {
         console.error("Error storing OTP in database:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
-    res.status(200).json({ message: "OTP sent successfully" });
 }
 
 
