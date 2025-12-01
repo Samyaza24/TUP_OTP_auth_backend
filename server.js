@@ -13,8 +13,20 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.post("/send-otp", sendOTP);
-app.post("/verify-otp", verifyOTP); 
+app.post("/send-otp", (req, res, next) => {
+    console.log("POST /send-otp - Request received", req.body);
+    sendOTP(req, res, next);
+});
+
+app.post("/verify-otp", (req, res, next) => {
+    console.log("POST /verify-otp - Request received", req.body);
+    verifyOTP(req, res, next);
+});
+
+// Test route
+app.get("/test", (req, res) => {
+    res.json({ message: "Test route works!", timestamp: new Date() });
+}); 
 
 const PORT = process.env.PORT || 5000;
 
