@@ -26,6 +26,7 @@ async function sendOTP(req, res) {
         resend.emails.send({
             from: process.env.EMAIL_FROM || "onboarding@resend.dev",
             to: email,
+            reply_to: "group1.ers.recovery@gmail.com",
             subject: "Your OTP Code",
             html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
         }).then(() => {
