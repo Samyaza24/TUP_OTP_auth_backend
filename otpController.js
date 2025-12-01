@@ -48,19 +48,6 @@ async function verifyOTP(req, res) {
     const { email, otp } = req.body;
 
     try {
-        // Debug: Check what's in the database
-        const checkDB = await pool.query(
-            "SELECT * FROM otps WHERE email = $1",
-            [email.trim()]
-        );
-        
-        console.log("Database check for email:", email.trim());
-        console.log("Found records:", checkDB.rows.length);
-        if (checkDB.rows.length > 0) {
-            console.log("Stored OTP:", checkDB.rows[0].code, "Type:", typeof checkDB.rows[0].code);
-            console.log("Input OTP:", String(otp).trim(), "Type:", typeof String(otp).trim());
-        }
-
         const result = await pool.query(
             "SELECT * FROM otps WHERE email = $1 AND code = $2",
             [email.trim(), String(otp).trim()]
