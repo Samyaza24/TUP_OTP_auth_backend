@@ -4,17 +4,20 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 // Create a transporter for sending emails
+const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: process.env.SMTP_PORT || 587,
-    secure: false,
+    port: smtpPort,
+    secure: smtpPort === 465, // true for 465, false for other ports
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
     tls: {
         rejectUnauthorized: false
-    }
+    },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 5000
 });
 
 
