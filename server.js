@@ -8,6 +8,10 @@ const app = express();
 app.use(cors())
 app.use(express.json());
 
+app.get("/", (req, res) => {
+    res.send("OTP Service is running");
+});
+
 // Routes
 app.post("/send-otp", sendOTP);
 app.post("/verify-otp", verifyOTP); 
