@@ -49,10 +49,23 @@ async function verifyOTP(req, res) {
     const { email, otp } = req.body;
 
     try {
+        // First check if email exists
+        const checkEmail = await pool.query(
+            "SELECT * FROM otps WHERE email = $1",
+            [email.trim()]
+        );
+        
+        console.log("Verification attempt:", { email: email.trim(), otp: String(otp).trim(), found: checkEmail.rows.length });
+        
+        if (checkEmail.rows.length > 0) {
+            console.log("DB OTP:", checkEmail.rows[0].code, "Type:", typeof checkEmail.rows[0].code);
+        }
+
         const result = await pool.query(
-            "SELECT * FROM otps WHERE email = $1 AND code::text = $2",
+            "SELECT * FROM otps WHERE email = $1 AND code = $2",
             [email.trim(), String(otp).trim()]
         );
+        
         if (result.rows.length === 0) {
             return res.status(400).json({ message: "Invalid OTP" });
         }
