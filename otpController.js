@@ -1,10 +1,13 @@
 const pool = require("./db").pool;
-const { Resend } = require("resend");
+const SibApiV3Sdk = require("sib-api-v3-sdk");
 
 require("dotenv").config();
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Brevo (Sendinblue) API
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = defaultClient.authentications["api-key"];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
 
 async function sendOTP(req, res) {
@@ -22,14 +25,18 @@ async function sendOTP(req, res) {
             [email, otp, otpExpiry]
         );
 
-        // Send OTP via email using Resend 
-        resend.emails.send({
-            from: process.env.EMAIL_FROM || "onboarding@resend.dev",
-            to: email,
-            replyTo: "group1.ers.recovery@gmail.com",
-            subject: "Your OTP Code",
-            html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
-        }).then(() => {
+        // Send OTP via email using Brevo
+        const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+        sendSmtpEmail.sender = { 
+            name: "ERS Recovery", 
+            email: process.env.EMAIL_FROM || "group1.ers.recovery@gmail.com" 
+        };
+        sendSmtpEmail.to = [{ email: email }];
+        sendSmtpEmail.replyTo = { email: "group1.ers.recovery@gmail.com" };
+        sendSmtpEmail.subject = "Your OTP Code";
+        sendSmtpEmail.htmlContent = `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
+
+        apiInstance.sendTransacEmail(sendSmtpEmail).then(() => {
             console.log("OTP email sent successfully to", email);
         }).catch((err) => {
             console.error("Error sending email:", err.message);
