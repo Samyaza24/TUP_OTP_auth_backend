@@ -1,10 +1,18 @@
 const pool = require("./db").pool;
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
 require("dotenv").config();
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create Gmail SMTP transporter
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+});
 
 
 async function sendOTP(req, res) {
@@ -22,19 +30,16 @@ async function sendOTP(req, res) {
             [email, otp, otpExpiry]
         );
 
-        // Send OTP via email using Resend
-        resend.emails.send({
-            from: "ERS Recovery <onboarding@resend.dev>",
+        // Send OTP via email using Gmail SMTP
+        transporter.sendMail({
+            from: `"ERS Recovery" <${process.env.EMAIL_USER}>`,
             to: email,
-            replyTo: "group1.ers.recovery@gmail.com",
             subject: "Your OTP Code",
             html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
-        }).then((data) => {
+        }).then(() => {
             console.log("OTP email sent successfully to", email);
-            console.log("Resend response:", JSON.stringify(data));
         }).catch((err) => {
             console.error("Error sending email:", err.message);
-            console.error("Full error:", JSON.stringify(err));
         });
 
         res.status(200).json({ message: "OTP sent successfully"});
