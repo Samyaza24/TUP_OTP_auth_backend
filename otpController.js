@@ -1,10 +1,25 @@
 const pool = require("./db").pool;
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
 require("dotenv").config();
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Nodemailer SMTP transporter from environment
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: Number(process.env.SMTP_PORT || 465) === 465, // true for 465, false for 587
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
+});
+
+// Verify transporter on startup (optional, logs only)
+transporter.verify().then(() => {
+    console.log("SMTP transporter ready");
+}).catch((err) => {
+    console.error("SMTP transporter verification failed:", err?.message || err);
+});
 
 
 async function sendOTP(req, res) {
@@ -22,20 +37,26 @@ async function sendOTP(req, res) {
             [email, otp, otpExpiry]
         );
 
-        // Send OTP via email using Resend 
-        resend.emails.send({
-            from: process.env.EMAIL_FROM || "onboarding@resend.dev",
-            to: email,
-            replyTo: "group1.ers.recovery@gmail.com",
-            subject: "Your OTP Code",
-            html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
-        }).then(() => {
-            console.log("OTP email sent successfully to", email);
-        }).catch((err) => {
-            console.error("Error sending email:", err.message);
-        });
-
-        res.status(200).json({ message: "OTP sent successfully"});
+        // Send OTP via email using Nodemailer SMTP
+        if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+            console.error("SMTP credentials missing: set SMTP_USER and SMTP_PASS")
+            return res.status(500).json({ message: "Email service not configured" })
+        }
+        const mailFrom = process.env.EMAIL_FROM || process.env.SMTP_USER
+        try {
+            await transporter.sendMail({
+                from: mailFrom,
+                to: email,
+                replyTo: "group1.ers.recovery@gmail.com",
+                subject: "Your OTP Code",
+                html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
+            })
+            console.log("OTP email sent successfully to", email)
+            return res.status(200).json({ message: "OTP sent successfully" })
+        } catch (err) {
+            console.error("Error sending email:", err?.response || err?.message || err)
+            return res.status(502).json({ message: "Failed to send OTP email" })
+        }
 
     } catch (error) {
         console.error("Error storing OTP in database:", error);
