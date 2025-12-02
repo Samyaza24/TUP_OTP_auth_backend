@@ -5,13 +5,21 @@ require("dotenv").config();
 
 // Initialize Nodemailer SMTP transporter from environment
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT || 465),
-    secure: Number(process.env.SMTP_PORT || 465) === 465, // true for 465, false for 587
+    service: process.env.SMTP_SERVICE || 'gmail',
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: false, // use STARTTLS on 587
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
+    tls: {
+        // allow self-signed / corporate MITM proxies if present
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1',
+    },
+    connectionTimeout: Number(process.env.SMTP_CONN_TIMEOUT || 15000), // 15s
+    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000), // 20s
 });
 
 // Verify transporter on startup (optional, logs only)
