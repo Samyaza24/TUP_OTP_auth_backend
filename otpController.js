@@ -29,10 +29,12 @@ async function sendOTP(req, res) {
             replyTo: "group1.ers.recovery@gmail.com",
             subject: "Your OTP Code",
             html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
-        }).then(() => {
+        }).then((data) => {
             console.log("OTP email sent successfully to", email);
+            console.log("Resend response:", JSON.stringify(data));
         }).catch((err) => {
             console.error("Error sending email:", err.message);
+            console.error("Full error:", JSON.stringify(err));
         });
 
         res.status(200).json({ message: "OTP sent successfully"});
